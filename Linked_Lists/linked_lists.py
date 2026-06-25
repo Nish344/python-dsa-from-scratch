@@ -71,7 +71,6 @@ class LinkedList:
         if self.head is None:
             raise IndexError("Cannot delete from an empty linked list.")
         
-        # If there's only one node
         if self.head.next is None:
             self.delete_head()
             return
@@ -88,7 +87,6 @@ class LinkedList:
         if self.head is None:
             raise ValueError("List is empty.")
 
-        # If the head is the target value
         if self.head.value == value:
             self.delete_head()
             return
@@ -114,10 +112,54 @@ class LinkedList:
             temp = temp.next
             pos += 1
 
-        return -1 # Standard convention for 'not found'
+        return -1
+
+    def replace_max_value(self, item):
+        """Replaces the value of the node holding the maximum value (O(n))."""
+        if self.head is None:
+            raise ValueError("List is empty.")
+
+        temp = self.head
+        max_value = temp
+
+        while temp is not None:
+            if temp.value > max_value.value:
+                max_value = temp
+            temp = temp.next
+
+        max_value.value = item
+
+    def reverse_list(self):
+        """Reverses the list by building a new list and reassigning the head (O(n))."""
+        new_list = LinkedList()
+        temp = self.head
+
+        while temp is not None:
+            new_list.insert_head(temp.value)
+            temp = temp.next
+        
+        self.head = new_list.head
+        self.n = new_list.n
+
+    def reverse_inplace(self):
+        """Reverses the list in-place by reversing node pointers (O(n))."""
+        prev_node = None
+        curr_node = self.head
+
+        while curr_node is not None:
+            next_node = curr_node.next
+            curr_node.next = prev_node
+            
+            prev_node = curr_node
+            curr_node = next_node
+        
+        self.head = prev_node
             
     def __getitem__(self, idx):
         """Retrieves the value at a specific index (O(n))."""
+        if idx < 0:
+            idx = self.n + idx
+
         if not (0 <= idx < self.n):
             raise IndexError("Index out of bounds")
 
@@ -139,7 +181,7 @@ class LinkedList:
             result += str(temp.value) + ' -> '
             temp = temp.next
         
-        return result[:-4] # Slices off the final ' -> '
+        return result[:-4]
 
 
 def main():
@@ -158,10 +200,14 @@ def main():
         print("4. Delete Head")
         print("5. Delete Tail")
         print("6. Delete by Value")
-        print("7. Clear List")
-        print("8. Exit")
+        print("7. Search by Value")
+        print("8. Reverse List (new list)")
+        print("9. Reverse In-Place")
+        print("10. Replace Max Value")
+        print("11. Clear List")
+        print("12. Exit")
         
-        choice = input("\nEnter your choice (1-8): ")
+        choice = input("\nEnter your choice (1-12): ")
         
         try:
             if choice == '1':
@@ -185,15 +231,33 @@ def main():
                 ll.delete_value(val)
                 print(f">> Value {val} deleted.")
             elif choice == '7':
+                val = input("Enter value to search: ")
+                pos = ll.search_value(val)
+                if pos != -1:
+                    print(f">> Value found at index {pos}.")
+                else:
+                    print(">> Value not found.")
+            elif choice == '8':
+                ll.reverse_list()
+                print(">> List reversed (new list).")
+            elif choice == '9':
+                ll.reverse_inplace()
+                print(">> List reversed in-place.")
+            elif choice == '10':
+                item = input("Enter replacement value for max node: ")
+                ll.replace_max_value(item)
+                print(">> Max value replaced.")
+            elif choice == '11':
                 ll.clear()
                 print(">> List cleared.")
-            elif choice == '8':
+            elif choice == '12':
                 print("Exiting CLI...")
                 break
             else:
-                print(">> Invalid choice.")
+                print(">> Invalid choice. Please enter a number between 1 and 12.")
         except Exception as e:
             print(f">> ERROR: {e}")
+
 
 if __name__ == "__main__":
     main()

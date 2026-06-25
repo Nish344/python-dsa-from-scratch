@@ -20,8 +20,7 @@ The list maintains a reference to the `head` (the first node). Every node contai
 * **State Management:** Maintains a discrete `self.n` variable to track list length in O(1) time without requiring a full traversal for `len()`.
 * **Garbage Collection:** Deleting nodes is handled implicitly by Python's garbage collector once the `next` reference is removed or bypassed.
 
-## 🚧 Upcoming Features
+## Upcoming Features
 This module will be expanded with the following operations:
-* `reverse()` - In-place pointer reversal.
 * `find_middle()` - Using the fast/slow pointer (tortoise and hare) algorithm.
 * Detection of cyclic loops.
