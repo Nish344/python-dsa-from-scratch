@@ -1,6 +1,6 @@
 # Complete Data Structures Notes
 
-> **Scope:** Arrays, Linked Lists, Queues, and Stacks — everything completed in this repository **except Hash Maps**.
+> **Scope:** Arrays, Linked Lists, Queues, and Stacks — Hash Maps not included yet.
 
 ---
 
@@ -20,7 +20,7 @@
 
 An **array** is a collection of elements stored in **contiguous memory** — each item sits right next to the previous one in RAM, like books on a shelf numbered 0, 1, 2, …
 
-A **dynamic array** (like Python's built-in `list`) starts small and **grows automatically** when full. Your implementation in `Arrays/dynamic_array.py` uses `ctypes` to simulate raw C-style memory allocation.
+A **dynamic array** (like Python's built-in `list`) starts small and **grows automatically** when full. The version in `Arrays/dynamic_array.py` uses `ctypes` to simulate raw C-style memory allocation.
 
 ```
 Memory layout (capacity = 8, n = 5 elements):
@@ -34,7 +34,7 @@ Values:  │ 10 │ 20 │ 30 │ 40 │ 50 │ -- │ -- │ -- │
                          size = 8 (capacity)
 ```
 
-### Key Variables in Your Implementation
+### Key Variables
 
 | Variable | Meaning |
 |----------|---------|
@@ -48,7 +48,7 @@ Values:  │ 10 │ 20 │ 30 │ 40 │ 50 │ -- │ -- │ -- │
 
 Think of a **parking lot with numbered slots**:
 
-- You can instantly drive to slot #3 (random access).
+- Any slot can be reached directly by number (random access).
 - If all slots are full, the lot doubles in size and every car is moved to the new lot (resize).
 - Inserting a car in the middle means shifting every car behind it forward — slow!
 
@@ -131,7 +131,7 @@ def __resize(self, new_capacity):
     self.A = B
 ```
 
-**Why double?** Doubling gives **amortized O(1)** append — you pay O(n) rarely, spread over many cheap appends.
+**Why double?** Doubling gives **amortized O(1)** append — the O(n) cost happens rarely, spread over many cheap appends.
 
 ---
 
@@ -264,7 +264,7 @@ head
   Node 0       Node 1       Node 2       Node 3
 ```
 
-Unlike arrays, nodes are **not contiguous** — you cannot jump to index 3 directly; you must walk from the head.
+Unlike arrays, nodes are **not contiguous** — index 3 can't be reached directly; traversal starts from the head.
 
 ---
 
@@ -272,8 +272,8 @@ Unlike arrays, nodes are **not contiguous** — you cannot jump to index 3 direc
 
 A **treasure hunt**:
 
-- Each clue (node) tells you where the next clue is (`next` pointer).
-- You cannot skip to clue #5 without following clues 1→2→3→4.
+- Each clue (node) points to where the next clue is (`next` pointer).
+- Clue #5 can't be reached without following clues 1→2→3→4.
 - Adding a new first clue is instant — just hand someone the new starting clue (O(1) head insert).
 
 ---
@@ -555,7 +555,7 @@ ARRAY (contiguous):                LINKED LIST (scattered):
 
 A **queue** follows **FIFO** — **First In, First Out**. The first element added is the first one removed. Think of a line at a coffee shop.
 
-Your implementation (`Queues/queues_using_linked_lists.py`) uses a singly linked list with two pointers:
+The linked-list version (`Queues/queues_using_linked_lists.py`) uses two pointers:
 
 - **`front`** — where dequeue happens (remove)
 - **`rear`** — where enqueue happens (add)
@@ -740,7 +740,7 @@ BFS always explores the closest level first — queues guarantee FIFO order.
 
 ## 4.1 Introduction
 
-A **stack** follows **LIFO** — **Last In, First Out**. The most recently added item is removed first. Your repo has **two implementations**:
+A **stack** follows **LIFO** — **Last In, First Out**. The most recently added item is removed first. There are **two implementations**:
 
 | Variant | File | Backing Store |
 |---------|------|---------------|
@@ -753,8 +753,8 @@ A **stack** follows **LIFO** — **Last In, First Out**. The most recently added
 
 A **stack of plates** in a cafeteria:
 
-- You add (push) a plate on top.
-- You remove (pop) from the top only.
+- New plates go on top (push).
+- Plates are always taken from the top (pop).
 - The bottom plate has been there the longest and is accessed last.
 
 ---
@@ -1016,7 +1016,7 @@ def undo_redo(self, text, commands):
 │  "Last action matters most"                →  STACK          │
 │  "I need fast lookup by key"               →  HASH MAP *    │
 └─────────────────────────────────────────────────────────────┘
-  * Hash Maps — coming soon in this repo
+  * Hash Maps — not covered yet
 ```
 
 ---
@@ -1057,7 +1057,7 @@ def undo_redo(self, text, commands):
 
 ---
 
-## 5.5 How to Run Your Implementations
+## 5.5 How to Run the Modules
 
 ```bash
 python3 Arrays/dynamic_array.py
@@ -1071,4 +1071,4 @@ Each module includes an interactive CLI for hands-on practice.
 
 ---
 
-*Notes generated from implementations in this repository. Hash Maps will be added when that module is completed.*
+*Hash Maps section to be added later.*
