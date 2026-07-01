@@ -1,6 +1,6 @@
 # Complete Data Structures Notes
 
-> **Scope:** Arrays, Linked Lists, Queues, and Stacks — Hash Maps not included yet.
+> **Scope:** Arrays, Linked Lists, Queues, Stacks, and Hash Maps.
 
 ---
 
@@ -10,7 +10,8 @@
 2. [Linked Lists (Singly Linked List)](#2-linked-lists-singly-linked-list)
 3. [Queues (FIFO)](#3-queues-fifo)
 4. [Stacks (LIFO)](#4-stacks-lifo)
-5. [Quick Comparison Cheat Sheet](#5-quick-comparison-cheat-sheet)
+5. [Hash Maps](#5-hash-maps)
+6. [Quick Comparison Cheat Sheet](#6-quick-comparison-cheat-sheet)
 
 ---
 
@@ -993,9 +994,394 @@ def undo_redo(self, text, commands):
 
 ---
 
-# 5. Quick Comparison Cheat Sheet
+# 5. Hash Maps
 
-## 5.1 All Structures at a Glance
+## 5.1 Introduction
+
+A **hash map** (or dictionary) stores **key-value pairs** and supports fast lookup by key. Instead of scanning every entry, a **hash function** converts a key into an array index — like a shortcut to the right slot.
+
+```
+Key "python"  ──hash──>  index 3  ──>  value 105
+Key "java"    ──hash──>  index 1  ──>  value 90
+```
+
+Two collision-resolution strategies are implemented:
+
+| Variant | File | Strategy |
+|---------|------|----------|
+| Linear Probing | `Hash_Maps/hashing_using_linear_probing.py` | Open addressing — probe next slot on collision |
+| Separate Chaining | `Hash_Maps/hashing_using_chaining.py` | Each bucket holds a linked list of entries |
+
+### The Hash Function (both variants)
+
+```python
+def hash_function(self, key):
+    return abs(hash(key)) % self.size   # or self.capacity for chaining
+```
+
+`hash(key)` produces a large integer; `% size` maps it into a valid table index.
+
+---
+
+## 5.2 Real-Life Analogy
+
+A **coat check at a theater**:
+
+- Each guest gets a **ticket number** (hash index) based on their name.
+- The attendant stores the coat in the matching locker (slot/bucket).
+- **Collision:** two names map to the same locker → either use the next free locker (linear probing) or hang multiple coats in one locker on hooks (chaining).
+
+---
+
+## 5.3 Merits & Demerits
+
+| ✅ Merits | ❌ Demerits |
+|-----------|-------------|
+| **O(1) average** lookup, insert, update by key | **Collisions** degrade performance toward O(n) |
+| No need to know index in advance | **No sorted order** — keys aren't stored in sequence |
+| Ideal for **caches, indexes, frequency counts** | Fixed table size can **fill up** (linear probing) or chains can grow long (chaining) |
+| Python `dict` uses a hash table under the hood | Hash function quality matters — bad distribution = more collisions |
+
+---
+
+## 5.4 Real-Life Examples
+
+| Use Case | How Hash Maps Help |
+|----------|-------------------|
+| **Phone contacts** | Name → phone number in one step |
+| **Caching (Redis, memcached)** | URL → cached page content |
+| **Word frequency counters** | Word → count |
+| **Database indexes** | Primary key → row location |
+| **Symbol tables in compilers** | Variable name → memory address |
+
+---
+
+## 5.5 Time Complexity Summary
+
+| Operation | Average | Worst Case | Notes |
+|-----------|---------|------------|-------|
+| Put / Update | O(1) | O(n) | Worst when table is crowded or chains are long |
+| Get | O(1) | O(n) | Must probe or walk chain on collision |
+| Contains (`key in d`) | O(1) | O(n) | Linear probing: uses `get` internally |
+| Clear | O(n) | O(n) | Reset all slots/buckets |
+| Rehash | O(n) | O(n) | Re-insert all entries into larger table |
+
+---
+
+## 5.6 Collisions — What Happens?
+
+A **collision** occurs when two different keys hash to the same index.
+
+```
+Keys "cat" and "act" might both hash to index 2:
+
+Linear Probing:              Separate Chaining:
+Index 2: [cat]               Bucket 2: cat→5 ──> act→8 ──> None
+Index 3: [act]  (next slot)
+```
+
+---
+
+# 5A. Linear Probing (Open Addressing)
+
+## 5A.1 How It Works
+
+The table has two parallel arrays:
+
+- **`slots`** — stores keys (or `None` if empty)
+- **`data`** — stores values at the same index
+
+On collision, probe the **next** index: `(index + 1) % size`, wrapping around the table.
+
+```
+Table size = 7
+
+put("apple", 10)  → hash → slot 3  →  [apple:10]
+put("grape", 20)  → hash → slot 3  →  occupied!
+                      probe → slot 4  →  [grape:20]
+
+Slots:  [_, _, _, apple, grape, _, _]
+Data:   [_, _, _,   10,    20, _, _]
+Index:   0  1  2    3      4   5  6
+```
+
+---
+
+## 5A.2 Operations with Visualizations & Code
+
+### Operation 1: Put (O(1) average)
+
+**Logic:**
+
+1. Hash the key to get `hash_value`.
+2. If slot is empty → store key and value.
+3. If slot has the **same key** → update value.
+4. Otherwise → probe forward until an empty slot or matching key is found.
+
+```
+put("dog", 30) when slots 3 and 4 are taken, hash lands on 3:
+
+Start at 3 → occupied (apple)
+Probe  4 → occupied (grape)
+Probe  5 → empty   → store dog:30
+```
+
+```python
+def put(self, key, value):
+    hash_value = self.hash_function(key)
+
+    if self.slots[hash_value] is None:
+        self.slots[hash_value] = key
+        self.data[hash_value] = value
+        self.n += 1
+        return
+
+    if self.slots[hash_value] == key:
+        self.data[hash_value] = value
+        return
+
+    new_hash_value = self.rehash(hash_value)
+    while self.slots[new_hash_value] is not None and self.slots[new_hash_value] != key:
+        new_hash_value = self.rehash(new_hash_value)
+        if new_hash_value == hash_value:
+            raise OverflowError("hash table is full")
+
+    if self.slots[new_hash_value] is None:
+        self.slots[new_hash_value] = key
+        self.data[new_hash_value] = value
+        self.n += 1
+    else:
+        self.data[new_hash_value] = value
+```
+
+### Operation 2: Probe Step (O(1) per step)
+
+```python
+def rehash(self, old_hash_value):
+    return (old_hash_value + 1) % self.size
+```
+
+### Operation 3: Get (O(1) average)
+
+**Logic:** Start at the hashed index, probe forward until the key is found or an empty slot is hit (key doesn't exist).
+
+```
+get("grape") → hash → 3
+  slot 3 = apple  → keep probing
+  slot 4 = grape  → return data[4] = 20
+```
+
+```python
+def get(self, key):
+    start_position = self.hash_function(key)
+
+    if self.slots[start_position] is None:
+        raise KeyError(key)
+
+    current_position = start_position
+    while True:
+        if self.slots[current_position] == key:
+            return self.data[current_position]
+
+        current_position = self.rehash(current_position)
+
+        if current_position == start_position:
+            raise KeyError(key)
+
+        if self.slots[current_position] is None:
+            raise KeyError(key)
+```
+
+### Operation 4: Bracket Access & Membership
+
+```python
+def __getitem__(self, key):
+    return self.get(key)
+
+def __setitem__(self, key, value):
+    self.put(key, value)
+
+def __contains__(self, key):
+    try:
+        self.get(key)
+        return True
+    except KeyError:
+        return False
+```
+
+### Operation 5: Clear (O(n))
+
+```python
+def clear(self):
+    self.slots = [None] * self.size
+    self.data = [None] * self.size
+    self.n = 0
+```
+
+---
+
+## 5A.3 Linear Probing — Pros & Cons
+
+| ✅ Pros | ❌ Cons |
+|---------|---------|
+| Simple — one array, cache-friendly | **Clustering** — filled runs of slots slow probing |
+| No extra pointer memory per entry | Table can fill up → `OverflowError` |
+| Good when load factor stays low | Deletes are tricky (need tombstone markers) |
+
+---
+
+# 5B. Separate Chaining
+
+## 5B.1 How It Works
+
+The table is an **array of buckets**. Each bucket is a **linked list** of `Node(key, value)` pairs. Multiple keys that hash to the same index share one bucket chain.
+
+```
+capacity = 5
+
+buckets[0]: Empty Bucket
+buckets[1]: python --> 105
+buckets[2]: java --> 90 --> rust --> 80
+buckets[3]: Empty Bucket
+buckets[4]: go --> 70
+```
+
+```
+         hash("java")  = 2
+         hash("rust")  = 2   (collision!)
+              │
+              ▼
+buckets[2]:  [java|90] ──> [rust|80] ──> None
+```
+
+---
+
+## 5B.2 Operations with Visualizations & Code
+
+### Operation 1: Put (O(1) average)
+
+**Logic:**
+
+1. Hash key → `bucket_index`.
+2. Search the bucket's linked list for the key.
+3. Key not found → append new node at tail.
+4. Key found → update the node's value.
+5. If load factor gets too high → **rehash** (double capacity, re-insert all entries).
+
+```
+put("rust", 80) when bucket 2 already has java:
+
+Before:  java --> 90
+After:   java --> 90 --> rust --> 80
+```
+
+```python
+def put(self, key, value):
+    bucket_index = self.hash_function(key)
+    node_index = self.get_node_index(bucket_index, key)
+
+    if node_index == -1:
+        self.buckets[bucket_index].insert_tail(key, value)
+        self.n += 1
+        if (self.n / self.capacity >= 2):
+            self.rehash()
+    else:
+        node = self.buckets[bucket_index].get_node_at_index(node_index)
+        node.value = value
+```
+
+### Operation 2: Get (O(1) average)
+
+```python
+def get(self, key):
+    bucket_index = self.hash_function(key)
+    res = self.buckets[bucket_index].search_value(key)
+
+    if res == -1:
+        return -1
+    else:
+        node = self.buckets[bucket_index].get_node_at_index(res)
+        return node.value
+```
+
+### Operation 3: Search Within a Bucket (O(k))
+
+`k` = number of nodes in that bucket's chain.
+
+```python
+def search_value(self, key):
+    temp = self.head
+    pos = 0
+    while temp is not None:
+        if temp.key == key:
+            return pos
+        temp = temp.next
+        pos += 1
+    return -1
+```
+
+### Operation 4: Rehash (O(n))
+
+**Logic:** Double the bucket count, create fresh empty buckets, re-insert every key-value pair.
+
+```
+Old capacity = 4, n = 6  →  load factor too high
+
+New capacity = 8
+Re-insert all 6 pairs into fresh buckets using new hash indices
+```
+
+```python
+def rehash(self):
+    self.capacity = self.capacity * 2
+    old_buckets = self.buckets
+    self.n = 0
+    self.buckets = self.make_array(self.capacity)
+
+    for bucket in old_buckets:
+        for j in range(bucket.n):
+            node = bucket.get_node_at_index(j)
+            self.put(node.key, node.value)
+```
+
+---
+
+## 5B.3 Separate Chaining — Pros & Cons
+
+| ✅ Pros | ❌ Cons |
+|---------|---------|
+| No table overflow — chains can grow | Extra memory per node (key, value, pointer) |
+| Deletion is straightforward (unlink node) | Long chains degrade to O(n) lookup |
+| Load factor can exceed 1.0 | Not as cache-friendly as contiguous slots |
+| Reuses linked list skills from earlier modules | Rehashing re-inserts every entry |
+
+---
+
+## 5.7 Linear Probing vs Separate Chaining
+
+```
+LINEAR PROBING                    SEPARATE CHAINING
+─────────────────                 ─────────────────
+One array of slots                Array of linked lists
+Collision → next slot             Collision → same bucket chain
+Risk: clustering                  Risk: long chains
+Memory: compact                   Memory: pointers per entry
+Delete: needs tombstones          Delete: unlink from chain
+```
+
+| Factor | Linear Probing | Separate Chaining |
+|--------|----------------|-------------------|
+| Collision handling | Probe forward | Append to linked list |
+| Max load factor | Must stay < 1 | Can exceed 1 |
+| Memory overhead | Low | Higher (node pointers) |
+| Implementation complexity | Moderate | Builds on linked lists |
+| Worst-case lookup | O(n) clustered slots | O(n) long chain |
+
+---
+
+# 6. Quick Comparison Cheat Sheet
+
+## 6.1 All Structures at a Glance
 
 | Structure | Order | Access Pattern | Best At |
 |-----------|-------|----------------|---------|
@@ -1003,10 +1389,11 @@ def undo_redo(self, text, commands):
 | **Linked List** | Sequential | Head O(1), index O(n) | Frequent head insert/delete |
 | **Queue** | FIFO | Front/rear O(1) | Fair scheduling, BFS |
 | **Stack** | LIFO | Top O(1) | Undo, DFS, nesting |
+| **Hash Map** | Unordered | Key lookup O(1) avg | Fast key-value access |
 
 ---
 
-## 5.2 When to Pick Which?
+## 6.2 When to Pick Which?
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -1014,28 +1401,29 @@ def undo_redo(self, text, commands):
 │  "I insert/delete at the beginning a lot"  →  LINKED LIST    │
 │  "First come, first served"                →  QUEUE          │
 │  "Last action matters most"                →  STACK          │
-│  "I need fast lookup by key"               →  HASH MAP *    │
+│  "I need fast lookup by key"               →  HASH MAP      │
 └─────────────────────────────────────────────────────────────┘
-  * Hash Maps — not covered yet
 ```
 
 ---
 
-## 5.3 Complexity Comparison Table
+## 6.3 Complexity Comparison Table
 
-| Operation | Array | Linked List | Queue (LL) | Stack (LL) |
-|-----------|-------|-------------|------------|------------|
-| Access by index | O(1) | O(n) | — | — |
-| Insert at beginning | O(n) | O(1) | — | O(1) push |
-| Insert at end | O(1)* | O(n) | O(1) enqueue | — |
-| Delete beginning | O(n) | O(1) | O(1) dequeue | O(1) pop |
-| Search | O(n) | O(n) | O(n) | O(n) |
+| Operation | Array | Linked List | Queue (LL) | Stack (LL) | Hash Map |
+|-----------|-------|-------------|------------|------------|----------|
+| Access by index | O(1) | O(n) | — | — | — |
+| Lookup by key | O(n) | O(n) | O(n) | O(n) | O(1)* |
+| Insert at beginning | O(n) | O(1) | — | O(1) push | — |
+| Insert at end | O(1)† | O(n) | O(1) enqueue | — | O(1)* put |
+| Delete beginning | O(n) | O(1) | O(1) dequeue | O(1) pop | — |
+| Search by value | O(n) | O(n) | O(n) | O(n) | — |
 
-*\* Amortized O(1) for dynamic array append*
+*† Amortized O(1) for dynamic array append*
+*\* Average case; O(n) worst case when collisions cluster*
 
 ---
 
-## 5.4 Relationship Diagram
+## 6.4 Relationship Diagram
 
 ```
                     LINEAR DATA STRUCTURES
@@ -1043,21 +1431,21 @@ def undo_redo(self, text, commands):
         ┌─────────┬───────────┼───────────┬─────────┐
         │         │           │           │         │
      ARRAY    LINKED LIST   QUEUE       STACK    HASH MAP
-   (contiguous) (nodes)    (FIFO)      (LIFO)   (upcoming)
-        │         │           │           │
-        │         └─────┬─────┘           │
-        │               │                 │
-        │         Both built on        Both O(1)
-        │         linked lists         top/front ops
-        │               │                 │
-        └───────────────┴─────────────────┘
+   (contiguous) (nodes)    (FIFO)      (LIFO)   (key→value)
+        │         │           │           │         │
+        │         └─────┬─────┘           │    uses linked
+        │               │                 │    lists for
+        │         Both built on        Both O(1)  chaining
+        │         linked lists         top/front │
+        │               │                 │         │
+        └───────────────┴─────────────────┴─────────┘
                   Foundation for
               trees, graphs, hash tables
 ```
 
 ---
 
-## 5.5 How to Run the Modules
+## 6.5 How to Run the Modules
 
 ```bash
 python3 Arrays/dynamic_array.py
@@ -1065,10 +1453,7 @@ python3 Linked_Lists/linked_lists.py
 python3 Queues/queues_using_linked_lists.py
 python3 Stacks/stacks_using_arrays.py
 python3 Stacks/stacks_using_linked_lists.py
+python3 Hash_Maps/hashing_using_linear_probing.py
 ```
 
-Each module includes an interactive CLI for hands-on practice.
-
----
-
-*Hash Maps section to be added later.*
+Linear probing has an interactive CLI. The chaining variant can be imported and used directly from `Hash_Maps/hashing_using_chaining.py`.
